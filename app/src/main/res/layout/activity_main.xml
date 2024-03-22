@@ -30,85 +30,28 @@
     android:background="#FFFFFF"
     android:orientation="vertical">
 
-    <LinearLayout
+
+    <Spinner
+        android:id="@+id/host_spinner"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal">
+        android:layout_height="53dp"
+        android:entries="@android:array/emailAddressTypes"
+        android:spinnerMode="dropdown" />
 
-        <TextView
-            android:layout_width="50dp"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center_vertical"
-            android:text="HOST:" />
-
-        <EditText
-            android:id="@+id/init_host"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="http://lan_ip:lan_port" />
-
-    </LinearLayout>
-
-    <LinearLayout
+    <Spinner
+        android:id="@+id/id_type_spinner"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal">
-
-        <TextView
-            android:layout_width="50dp"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center_vertical"
-            android:text="API:" />
-
-        <EditText
-            android:id="@+id/init_ref"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="/api/realid/initialize" />
-
-    </LinearLayout>
-
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal">
-
-        <TextView
-            android:layout_width="50dp"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center_vertical"
-            android:text="DOC:" />
-
-        <EditText
-            android:id="@+id/init_doc_type"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="00000001003" />
-
-    </LinearLayout>
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal">
-
-        <TextView
-            android:layout_width="50dp"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center_vertical"
-            android:text="LEVEL:" />
-
-        <EditText
-            android:id="@+id/init_service_level"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="REALID0002" />
-
-    </LinearLayout>
+        android:layout_height="41dp" />
 
     <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:onClick="startZoloz"
-        android:text="START ZOLOZ" />
+        android:onClick="doSomething"
+        android:text="Do Something" />
+
+    <TextView
+        android:id="@+id/logs_textView"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="TextView" />
 </LinearLayout>

@@ -35,7 +35,15 @@ import androidx.appcompat.app.AppCompatActivity;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
+import android.widget.Spinner;
+import android.widget.TextView;
 import android.widget.Toast;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.UUID;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
@@ -46,98 +54,238 @@ import com.ap.zoloz.hummer.api.ZLZRequest;
 import com.ap.zoloz.hummer.api.ZLZResponse;
 import com.zoloz.builder.BuildConfig;
 
+import Objects.IdType;
 
-public class MainActivity extends AppCompatActivity {
+
+public class MainActivity extends AppCompatActivity implements AdapterView.OnItemSelectedListener {
     public static final String TAG = MainActivity.class.getSimpleName();
 
 
     private static final int REQUEST_EXTERNAL_STORAGE = 1;
 
+    String[] hosts = {
+            "https://rn-dev-ekyc-api.nprod.platform-11.com/ekyc",
+            "https://rn-sit-ekyc-api.nprod.platform-11.com/ekyc",
+            "https://rn-uat-ekyc-api.nprod.platform-11.com/ekyc",
+            "https://rn-staging-ekyc-api.nprod.platform-11.com/ekyc",
+            "http://10.11.153.36:8080/ekyc"
+    };
+
+    String[] idNames = {
+            "postal"
+    };
+    String[] idCodes = {
+            "00630000016"
+    };
 
     private Handler mHandler;
 
+    String selectedHost = null;
+    String selectedId = null;
+    String userId = null;
+    String status = "CONTACT_DETAILS";
+    TextView textView = null;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         mHandler = new Handler();
-        EditTextUtils.setup(this, R.id.init_host);
-        EditTextUtils.setup(this, R.id.init_ref);
-        EditTextUtils.setup(this, R.id.init_doc_type);
-        EditTextUtils.setup(this, R.id.init_service_level);
-    }
+        textView = (TextView) findViewById(R.id.logs_textView);
 
+        Spinner spinner = (Spinner) findViewById(R.id.host_spinner);
+        Spinner idTypeSpinner = (Spinner) findViewById(R.id.id_type_spinner);
+
+        spinner.setOnItemSelectedListener(this);
+        idTypeSpinner.setOnItemSelectedListener(this);
+
+        ArrayAdapter ad = new ArrayAdapter(
+                this,
+                android.R.layout.simple_spinner_item,
+                hosts
+        );
+        ad.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinner.setAdapter(ad);
+
+        ArrayAdapter ad2 = new ArrayAdapter(
+                this,
+                android.R.layout.simple_spinner_item,
+                idNames
+        );
+        ad2.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        idTypeSpinner.setAdapter(ad2);
+
+        userId =  UUID.randomUUID().toString();
+    }
 
     private void runOnIoThread(Runnable runnable) {
         Thread thread = new Thread(runnable);
         thread.start();
     }
 
+    public void doSomething(View view) {
+        Toast.makeText(MainActivity.this, status,
+                Toast.LENGTH_LONG).show();
 
-    public void startZoloz(View view) {
-        runOnIoThread(new Runnable() {
-            @Override
-            public void run() {
-                String result = mockInitRequest();
-                if (TextUtils.isEmpty(result)) {
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            Toast.makeText(MainActivity.this, "network exception, please try again later.", Toast.LENGTH_SHORT).show();
-                        }
-                    });
-                    return;
-                }
-                final InitResponse initResponse = JSON.parseObject(result, InitResponse.class);
-                final ZLZFacade zlzFacade = ZLZFacade.getInstance();
-                final ZLZRequest request = new ZLZRequest();
-                request.zlzConfig = initResponse.clientCfg;
-                request.bizConfig.put(ZLZConstants.CONTEXT, MainActivity.this);
-                request.bizConfig.put(ZLZConstants.PUBLIC_KEY, initResponse.rsaPubKey);
-                request.bizConfig.put(ZLZConstants.LOCALE, "en-US");
-                Log.d(TAG, "request success:");
-                mHandler.postAtFrontOfQueue(new Runnable() {
-                    @Override
-                    public void run() {
-                        Log.d(TAG, "start zoloz");
-                        zlzFacade.start(request, new IZLZCallback() {
-                            @Override
-                            public void onCompleted(ZLZResponse response) {
-                                checkResult(initResponse.transactionId);
-                            }
-
-                            @Override
-                            public void onInterrupted(ZLZResponse response) {
-                                showResponse(initResponse.transactionId, JSON.toJSONString(response));
-                                Toast.makeText(MainActivity.this, "interrupted", Toast.LENGTH_SHORT).show();
-                            }
-                        });
-                    }
-                });
-            }
-        });
+        switch(status) {
+            case "CONTACT_DETAILS":
+                this.contactDetails();
+                break;
+            case "INITIALIZE_ZOLOZ":
+                this.initializeZoloz();
+                break;
+            case "CHECK_RESULT":
+                this.checkResult();
+                break;
+            case "TAG_INITIAL_ID":
+                this.tagInitialId();
+                break;
+            case "SUBMIT_CIF":
+                this.submitCif();
+                break;
+            default:
+                break;
+        }
     }
 
-    private void checkResult(final String transactionId) {
+
+    public String contactDetails() {
         runOnIoThread(new Runnable() {
             @Override
             public void run() {
                 IRequest request = new LocalRequest();
-                String requestUrl = EditTextUtils.getAndSave(MainActivity.this, R.id.init_host) + EditTextUtils.getAndSave(MainActivity.this, R.id.init_ref);
-                requestUrl = requestUrl.replaceAll("initialize", "checkresult");
-                JSONObject jsonObject = new JSONObject();
-                jsonObject.put("transactionId", transactionId);
-                String requestData = jsonObject.toString();
-                final String result = request.request(requestUrl, requestData);
+                String requestUrl = selectedHost + "/v6/customer/" + userId + "/contact-details";
+                JSONObject jsonObject = (JSONObject) JSONObject.parse("{ \"device\": { \"id\": \"string\", \"model\": \"string\" }, \"email\": \"mariano.rlp01+003@gmail.com\", \"host\": { \"os\": \"string\", \"userName\": \"mariano.rlp01+003@gmail.com\", \"version\": \"string\" }, \"mobileNumber\": \"09770349543\", \"sessionStart\": \"2023-05-10T01:29:42.325Z\" }");
+
+                final String result = request.contactDetailsRequest(requestUrl, jsonObject);
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        showResponse(transactionId, result);
+                        logSomething("contactDetails");
+                        logSomething(result);
+                        status = "INITIALIZE_ZOLOZ";
                     }
                 });
             }
         });
+
+        return "";
     }
+
+    public String initializeZoloz() {
+        runOnIoThread(new Runnable() {
+            @Override
+            public void run() {
+                IRequest request = new LocalRequest();
+                String requestUrl = selectedHost + "/v1/zoloz/realId/transaction";
+                JSONObject jsonObject = (JSONObject) JSONObject.parse("{ \"docType\": \"" + selectedId + "\", \"metaInfo\": \"{\\\"deviceType\\\":\\\"android\\\",\\\"appVersion\\\":\\\"1.1.0.6\\\",\\\"buildVersion\\\":\\\"1.2.13.230404102843\\\",\\\"keyHash\\\":\\\"EAE104\\\",\\\"osVersion\\\":\\\"13\\\",\\\"appName\\\":\\\"com.zoloz.saas.example\\\",\\\"bioMetaInfo\\\":\\\"3.61.0:,;JJJBICRJIICRKQA=;1.2.13.230404102843\\\",\\\"apdidToken\\\":\\\"ZLZD567CB6039E04A139D4B762A95F542EA\\\",\\\"deviceModel\\\":\\\"M2012K11AG\\\"}\", \"host\": { \"os\": \"string\", \"userName\": \"mariano.rlp01+003@gmail.com\", \"version\": \"string\" } }");
+                final JSONObject result = request.initializeZoloz(requestUrl, jsonObject, userId);
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        logSomething("initializeZoloz");
+                        logSomething(JSONObject.toJSONString(result));
+                        logSomething(result.getString("transactionId"));
+                        status = "INITIALIZE_ZOLOZ";
+                    }
+                });
+            }
+        });
+
+
+
+
+        this.logSomething("initializeZoloz");
+        this.status = "CHECK_RESULT";
+        return "";
+    }
+
+    public String checkResult() {
+        this.logSomething("checkResult");
+        this.status = "TAG_INITIAL_ID";
+        return "";
+    }
+
+    public String tagInitialId() {
+        this.logSomething("tagInitialId");
+        this.status = "SUBMIT_CIF";
+        return "";
+    }
+
+    public String submitCif() {
+        this.logSomething("submitCif");
+        return "";
+    }
+
+    public void logSomething(String string) {
+        textView.setText(textView.getText() + "\n" + string);
+    }
+
+
+
+//    public void startZoloz(View view) {
+//        runOnIoThread(new Runnable() {
+//            @Override
+//            public void run() {
+//                String result = mockInitRequest();
+//                if (TextUtils.isEmpty(result)) {
+//                    runOnUiThread(new Runnable() {
+//                        @Override
+//                        public void run() {
+//                            Toast.makeText(MainActivity.this, "network exception, please try again later.", Toast.LENGTH_SHORT).show();
+//                        }
+//                    });
+//                    return;
+//                }
+//                final InitResponse initResponse = JSON.parseObject(result, InitResponse.class);
+//                final ZLZFacade zlzFacade = ZLZFacade.getInstance();
+//                final ZLZRequest request = new ZLZRequest();
+//                request.zlzConfig = initResponse.clientCfg;
+//                request.bizConfig.put(ZLZConstants.CONTEXT, MainActivity.this);
+//                request.bizConfig.put(ZLZConstants.PUBLIC_KEY, initResponse.rsaPubKey);
+//                request.bizConfig.put(ZLZConstants.LOCALE, "en-US");
+//                Log.d(TAG, "request success:");
+//                mHandler.postAtFrontOfQueue(new Runnable() {
+//                    @Override
+//                    public void run() {
+//                        Log.d(TAG, "start zoloz");
+//                        zlzFacade.start(request, new IZLZCallback() {
+//                            @Override
+//                            public void onCompleted(ZLZResponse response) {
+//                                checkResult(initResponse.transactionId);
+//                            }
+//
+//                            @Override
+//                            public void onInterrupted(ZLZResponse response) {
+//                                showResponse(initResponse.transactionId, JSON.toJSONString(response));
+//                                Toast.makeText(MainActivity.this, "interrupted", Toast.LENGTH_SHORT).show();
+//                            }
+//                        });
+//                    }
+//                });
+//            }
+//        });
+//    }
+
+//    private void checkResult(final String transactionId) {
+//        runOnIoThread(new Runnable() {
+//            @Override
+//            public void run() {
+//                IRequest request = new LocalRequest();
+//                String requestUrl = EditTextUtils.getAndSave(MainActivity.this, R.id.init_host) + EditTextUtils.getAndSave(MainActivity.this, R.id.init_ref);
+//                requestUrl = requestUrl.replaceAll("initialize", "checkresult");
+//                JSONObject jsonObject = new JSONObject();
+//                jsonObject.put("transactionId", transactionId);
+//                String requestData = jsonObject.toString();
+//                final String result = request.request(requestUrl, requestData);
+//                runOnUiThread(new Runnable() {
+//                    @Override
+//                    public void run() {
+//                        showResponse(transactionId, result);
+//                    }
+//                });
+//            }
+//        });
+//    }
 
     private void showResponse(final String flowId, String response) {
         AlertDialog alertDialog = new AlertDialog.Builder(this)
@@ -160,16 +308,30 @@ public class MainActivity extends AppCompatActivity {
         alertDialog.show();
     }
 
-    protected String mockInitRequest() {
-        IRequest request = new LocalRequest();
-        String requestUrl = EditTextUtils.getAndSave(this, R.id.init_host) + EditTextUtils.getAndSave(this, R.id.init_ref);
-        JSONObject jsonObject = new JSONObject();
-        jsonObject.put("metaInfo", ZLZFacade.getMetaInfo(this));
-        jsonObject.put("serviceLevel", EditTextUtils.getAndSave(this, R.id.init_service_level));
-        jsonObject.put("docType", EditTextUtils.getAndSave(this, R.id.init_doc_type));
-        jsonObject.put("v", BuildConfig.VERSION_NAME);
-        String requestData = jsonObject.toString();
-        String result = request.request(requestUrl, requestData);
-        return result;
+    @Override
+    public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
+        if (adapterView.getId() == R.id.host_spinner) {
+            this.selectedHost = hosts[i];
+        } else if (adapterView.getId() == R.id.id_type_spinner) {
+            this.selectedId = idCodes[i];
+        }
     }
+
+    @Override
+    public void onNothingSelected(AdapterView<?> adapterView) {
+
+    }
+
+//    protected String mockInitRequest() {
+//        IRequest request = new LocalRequest();
+//        String requestUrl = EditTextUtils.getAndSave(this, R.id.init_host) + EditTextUtils.getAndSave(this, R.id.init_ref);
+//        JSONObject jsonObject = new JSONObject();
+//        jsonObject.put("metaInfo", ZLZFacade.getMetaInfo(this));
+//        jsonObject.put("serviceLevel", EditTextUtils.getAndSave(this, R.id.init_service_level));
+//        jsonObject.put("docType", EditTextUtils.getAndSave(this, R.id.init_doc_type));
+//        jsonObject.put("v", BuildConfig.VERSION_NAME);
+//        String requestData = jsonObject.toString();
+//        String result = request.request(requestUrl, requestData);
+//        return result;
+//    }
 }

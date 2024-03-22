@@ -23,8 +23,12 @@
  */
 package com.zoloz.saas.example;
 
+import com.alibaba.fastjson.JSONObject;
+
 public interface IRequest {
 
     String request(String requestUrl, String requestData);
+    String contactDetailsRequest(String requestUrl, JSONObject request);
+    JSONObject initializeZoloz(String requestUrl, JSONObject request, String userId);
 
 }
