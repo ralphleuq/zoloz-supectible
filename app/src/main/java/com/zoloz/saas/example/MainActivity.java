@@ -186,6 +186,10 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
                         logSomething(JSONObject.toJSONString(result));
                         logSomething(result.getString("transactionId"));
                         status = "INITIALIZE_ZOLOZ";
+
+                        startZoloz(result);
+
+
                     }
                 });
             }
@@ -222,11 +226,11 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
 
 
 
-//    public void startZoloz(View view) {
-//        runOnIoThread(new Runnable() {
-//            @Override
-//            public void run() {
-//                String result = mockInitRequest();
+    public void startZoloz(JSONObject jsonObject) {
+        runOnIoThread(new Runnable() {
+            @Override
+            public void run() {
+//                String result = mockInitRequest(jsonObject);
 //                if (TextUtils.isEmpty(result)) {
 //                    runOnUiThread(new Runnable() {
 //                        @Override
@@ -237,34 +241,35 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
 //                    return;
 //                }
 //                final InitResponse initResponse = JSON.parseObject(result, InitResponse.class);
-//                final ZLZFacade zlzFacade = ZLZFacade.getInstance();
-//                final ZLZRequest request = new ZLZRequest();
-//                request.zlzConfig = initResponse.clientCfg;
-//                request.bizConfig.put(ZLZConstants.CONTEXT, MainActivity.this);
-//                request.bizConfig.put(ZLZConstants.PUBLIC_KEY, initResponse.rsaPubKey);
-//                request.bizConfig.put(ZLZConstants.LOCALE, "en-US");
-//                Log.d(TAG, "request success:");
-//                mHandler.postAtFrontOfQueue(new Runnable() {
-//                    @Override
-//                    public void run() {
-//                        Log.d(TAG, "start zoloz");
-//                        zlzFacade.start(request, new IZLZCallback() {
-//                            @Override
-//                            public void onCompleted(ZLZResponse response) {
+                final ZLZFacade zlzFacade = ZLZFacade.getInstance();
+                final ZLZRequest request = new ZLZRequest();
+                request.zlzConfig = jsonObject.getString("clientCfg");
+                request.bizConfig.put(ZLZConstants.CONTEXT, MainActivity.this);
+                request.bizConfig.put(ZLZConstants.PUBLIC_KEY, jsonObject.getString("rsaPubKey"));
+                request.bizConfig.put(ZLZConstants.LOCALE, "en-US");
+                Log.d(TAG, "request success:");
+                mHandler.postAtFrontOfQueue(new Runnable() {
+                    @Override
+                    public void run() {
+                        Log.d(TAG, "start zoloz");
+                        zlzFacade.start(request, new IZLZCallback() {
+                            @Override
+                            public void onCompleted(ZLZResponse response) {
+                                System.out.println("aaaaaaaaa");
 //                                checkResult(initResponse.transactionId);
-//                            }
-//
-//                            @Override
-//                            public void onInterrupted(ZLZResponse response) {
+                            }
+
+                            @Override
+                            public void onInterrupted(ZLZResponse response) {
 //                                showResponse(initResponse.transactionId, JSON.toJSONString(response));
-//                                Toast.makeText(MainActivity.this, "interrupted", Toast.LENGTH_SHORT).show();
-//                            }
-//                        });
-//                    }
-//                });
-//            }
-//        });
-//    }
+                                Toast.makeText(MainActivity.this, "interrupted", Toast.LENGTH_SHORT).show();
+                            }
+                        });
+                    }
+                });
+            }
+        });
+    }
 
 //    private void checkResult(final String transactionId) {
 //        runOnIoThread(new Runnable() {
@@ -322,13 +327,13 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
 
     }
 
-//    protected String mockInitRequest() {
+//    protected String mockInitRequest(JSONObject data) {
 //        IRequest request = new LocalRequest();
-//        String requestUrl = EditTextUtils.getAndSave(this, R.id.init_host) + EditTextUtils.getAndSave(this, R.id.init_ref);
+//        String requestUrl = "https://sg-sandbox-api.zoloz.com" + EditTextUtils.getAndSave(this, R.id.init_ref);
 //        JSONObject jsonObject = new JSONObject();
 //        jsonObject.put("metaInfo", ZLZFacade.getMetaInfo(this));
-//        jsonObject.put("serviceLevel", EditTextUtils.getAndSave(this, R.id.init_service_level));
-//        jsonObject.put("docType", EditTextUtils.getAndSave(this, R.id.init_doc_type));
+//        jsonObject.put("serviceLevel", "REALID0001");
+//        jsonObject.put("docType", selectedId);
 //        jsonObject.put("v", BuildConfig.VERSION_NAME);
 //        String requestData = jsonObject.toString();
 //        String result = request.request(requestUrl, requestData);

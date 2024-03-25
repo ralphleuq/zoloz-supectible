@@ -155,8 +155,7 @@ public class LocalRequest implements IRequest {
                     sb.append(readLine).append("\n");
                 }
                 responseReader.close();
-                System.out.println(JSONObject.toJSONString(httpConn.getContent()));
-                return JSONObject.parseObject(JSONObject.toJSONString(httpConn.getContent()));
+                return JSONObject.parseObject(sb.toString());
             }
 
         } catch (Exception e) {
