@@ -27,6 +27,7 @@ package com.zoloz.saas.example;
 import android.app.AlertDialog;
 import android.content.ClipData;
 import android.content.ClipboardManager;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.os.Bundle;
 import android.os.Handler;
@@ -131,7 +132,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
                 this.contactDetails();
                 break;
             case "INITIALIZE_ZOLOZ":
-                this.initializeZoloz();
+                this.initializeZoloz(ZLZFacade.getMetaInfo(this));
                 break;
             case "CHECK_RESULT":
                 this.checkResult();
@@ -171,14 +172,24 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         return "";
     }
 
-    public String initializeZoloz() {
+    public String initializeZoloz(String metaInfo) {
         runOnIoThread(new Runnable() {
             @Override
             public void run() {
                 IRequest request = new LocalRequest();
                 String requestUrl = selectedHost + "/v1/zoloz/realId/transaction";
-                JSONObject jsonObject = (JSONObject) JSONObject.parse("{ \"docType\": \"" + selectedId + "\", \"metaInfo\": \"{\\\"deviceType\\\":\\\"android\\\",\\\"appVersion\\\":\\\"1.1.0.6\\\",\\\"buildVersion\\\":\\\"1.2.13.230404102843\\\",\\\"keyHash\\\":\\\"EAE104\\\",\\\"osVersion\\\":\\\"13\\\",\\\"appName\\\":\\\"com.zoloz.saas.example\\\",\\\"bioMetaInfo\\\":\\\"3.61.0:,;JJJBICRJIICRKQA=;1.2.13.230404102843\\\",\\\"apdidToken\\\":\\\"ZLZD567CB6039E04A139D4B762A95F542EA\\\",\\\"deviceModel\\\":\\\"M2012K11AG\\\"}\", \"host\": { \"os\": \"string\", \"userName\": \"mariano.rlp01+003@gmail.com\", \"version\": \"string\" } }");
-                final JSONObject result = request.initializeZoloz(requestUrl, jsonObject, userId);
+                JSONObject jsonObject1 = new JSONObject();
+                JSONObject host = new JSONObject();
+                host.put("os", "string");
+                host.put("userName", "mariano.rlp01+003@gmail.com");
+                host.put("version", "string");
+
+                jsonObject1.put("docType", selectedId);
+                jsonObject1.put("metaInfo", metaInfo);
+                jsonObject1.put("host", host);
+
+                final JSONObject result = request.initializeZoloz(requestUrl, jsonObject1, userId);
+                System.out.println("111111111111111111" + result.toJSONString());
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
@@ -188,8 +199,6 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
                         status = "INITIALIZE_ZOLOZ";
 
                         startZoloz(result);
-
-
                     }
                 });
             }
@@ -243,10 +252,11 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
 //                final InitResponse initResponse = JSON.parseObject(result, InitResponse.class);
                 final ZLZFacade zlzFacade = ZLZFacade.getInstance();
                 final ZLZRequest request = new ZLZRequest();
+                System.out.println("222222222222222222222222" + jsonObject.getString("clientCfg"));
                 request.zlzConfig = jsonObject.getString("clientCfg");
                 request.bizConfig.put(ZLZConstants.CONTEXT, MainActivity.this);
                 request.bizConfig.put(ZLZConstants.PUBLIC_KEY, jsonObject.getString("rsaPubKey"));
-                request.bizConfig.put(ZLZConstants.LOCALE, "en-US");
+                request.bizConfig.put(ZLZConstants.LOCALE, "en");
                 Log.d(TAG, "request success:");
                 mHandler.postAtFrontOfQueue(new Runnable() {
                     @Override
@@ -261,6 +271,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
 
                             @Override
                             public void onInterrupted(ZLZResponse response) {
+                                System.out.println("bbbbbbbbbbbbb");
 //                                showResponse(initResponse.transactionId, JSON.toJSONString(response));
                                 Toast.makeText(MainActivity.this, "interrupted", Toast.LENGTH_SHORT).show();
                             }
