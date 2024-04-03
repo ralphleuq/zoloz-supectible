@@ -69,7 +69,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
             "https://rn-sit-ekyc-api.nprod.platform-11.com/ekyc",
             "https://rn-uat-ekyc-api.nprod.platform-11.com/ekyc",
             "https://rn-staging-ekyc-api.nprod.platform-11.com/ekyc",
-            "http://10.11.153.36:8080/ekyc"
+            "https://6d94-209-141-3-90.ngrok-free.app/ekyc"
     };
 
     String[] idNames = {
